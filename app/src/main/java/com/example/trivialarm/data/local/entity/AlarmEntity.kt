@@ -12,17 +12,29 @@ data class AlarmEntity(
     val hour: Int,
     val minute: Int,
     val isEnabled: Boolean = true,
-    val daysOfWeek: List<Int> // 1 for Monday, 7 for Sunday etc.
+    val daysOfWeek: List<Int>, // 1 for Monday, 7 for Sunday etc.
+    val categoryId: Int? = null,
+    val difficultyPreset: AlarmDifficultyPreset = AlarmDifficultyPreset.MEDIUM
 )
 
-class DaysOfWeekConverter {
+class AppConverters {
     @TypeConverter
-    fun fromList(value: List<Int>): String {
+    fun fromDaysOfWeekList(value: List<Int>): String {
         return Json.encodeToString(value)
     }
 
     @TypeConverter
-    fun toList(value: String): List<Int> {
+    fun toDaysOfWeekList(value: String): List<Int> {
         return Json.decodeFromString(value)
+    }
+
+    @TypeConverter
+    fun fromDifficultyPreset(value: AlarmDifficultyPreset): String {
+        return value.name
+    }
+
+    @TypeConverter
+    fun toDifficultyPreset(value: String): AlarmDifficultyPreset {
+        return AlarmDifficultyPreset.valueOf(value)
     }
 }

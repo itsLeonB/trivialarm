@@ -40,6 +40,7 @@ fun NavGraph(
                 is Route.AlarmActive -> NavEntry(route) {
                     val triviaViewModel: TriviaViewModel = hiltViewModel()
                     AlarmActiveScreen(
+                        alarmId = route.alarmId,
                         viewModel = triviaViewModel,
                         onStopAlarm = onStopAlarm
                     )

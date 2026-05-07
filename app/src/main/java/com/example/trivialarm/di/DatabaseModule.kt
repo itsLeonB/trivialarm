@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.example.trivialarm.data.local.AppDatabase
 import com.example.trivialarm.data.local.dao.AlarmDao
+import com.example.trivialarm.data.local.dao.CategoryDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -22,11 +23,18 @@ object DatabaseModule {
             context,
             AppDatabase::class.java,
             "trivialarm_database"
-        ).build()
+        )
+        .addMigrations(AppDatabase.MIGRATION_1_2)
+        .build()
     }
 
     @Provides
     fun provideAlarmDao(database: AppDatabase): AlarmDao {
         return database.alarmDao()
+    }
+
+    @Provides
+    fun provideCategoryDao(database: AppDatabase): CategoryDao {
+        return database.categoryDao()
     }
 }
