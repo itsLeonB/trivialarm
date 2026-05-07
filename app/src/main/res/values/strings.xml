@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">TriviAlarm</string>
+    <string name="add_alarm">Add Alarm</string>
+    <string name="edit_alarm">Edit Alarm</string>
+    <string name="save_alarm">Save Alarm</string>
+    <string name="delete_alarm">Delete</string>
+    <string name="repeat">Repeat</string>
+    <string name="once">Once</string>
+    <string name="no_alarms">No alarms scheduled</string>
+    <string name="alarm_active">ALARM ACTIVE</string>
+    <string name="fetching_trivia">Fetching Trivia...</string>
+    <string name="retry">Retry</string>
+    <string name="correct_answers">Correct Answers: %1$d/3</string>
+    <string name="well_done">Well Done!</string>
+    <string name="wake_up_trivia">Wake up! Solve the trivia to stop the alarm.</string>
+</resources>
