@@ -35,6 +35,6 @@ class AppConverters {
 
     @TypeConverter
     fun toDifficultyPreset(value: String): AlarmDifficultyPreset {
-        return AlarmDifficultyPreset.valueOf(value)
+        return AlarmDifficultyPreset.entries.firstOrNull { it.name == value } ?: AlarmDifficultyPreset.MEDIUM
     }
 }

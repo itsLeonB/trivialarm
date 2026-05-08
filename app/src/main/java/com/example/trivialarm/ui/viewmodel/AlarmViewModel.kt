@@ -1,5 +1,6 @@
 package com.example.trivialarm.ui.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.trivialarm.data.local.entity.AlarmEntity
@@ -19,6 +20,8 @@ class AlarmViewModel @Inject constructor(
     private val categoryRepository: CategoryRepository
 ) : ViewModel() {
 
+    private val tag = "AlarmViewModel"
+
     val alarms: StateFlow<List<AlarmEntity>> = repository.getAllAlarms()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -27,7 +30,11 @@ class AlarmViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            categoryRepository.syncCategories()
+            try {
+                categoryRepository.syncCategories()
+            } catch (e: Exception) {
+                Log.e(tag, "Failed to sync categories", e)
+            }
         }
     }
 
