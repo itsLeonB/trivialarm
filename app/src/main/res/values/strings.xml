@@ -10,7 +10,7 @@
     <string name="alarm_active">ALARM ACTIVE</string>
     <string name="fetching_trivia">Fetching Trivia...</string>
     <string name="retry">Retry</string>
-    <string name="correct_answers">Correct Answers: %1$d/3</string>
+    <string name="correct_answers">Correct Answers: %1$d/%2$d</string>
     <string name="well_done">Well Done!</string>
     <string name="wake_up_trivia">Wake up! Solve the trivia to stop the alarm.</string>
 </resources>

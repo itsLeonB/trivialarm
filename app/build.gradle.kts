@@ -37,6 +37,9 @@ android {
         compose = true
         buildConfig = true
     }
+
+    testOptions {
+    }
 }
 
 dependencies {
@@ -85,6 +88,7 @@ dependencies {
     testImplementation(libs.androidx.junit)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.mockk)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)

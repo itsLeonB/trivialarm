@@ -21,6 +21,7 @@ import com.example.trivialarm.R
 
 @Composable
 fun AlarmActiveScreen(
+    alarmId: Int,
     viewModel: TriviaViewModel,
     onStopAlarm: () -> Unit
 ) {
@@ -28,6 +29,10 @@ fun AlarmActiveScreen(
     BackHandler(enabled = true) { }
 
     val state = viewModel.uiState
+
+    LaunchedEffect(alarmId) {
+        viewModel.initialize(alarmId)
+    }
 
     LaunchedEffect(state) {
         if (state is TriviaUiState.Finished) {
@@ -67,13 +72,13 @@ fun AlarmActiveScreen(
                         color = MaterialTheme.colorScheme.errorContainer,
                         textAlign = TextAlign.Center
                     )
-                    Button(onClick = { viewModel.fetchQuestions() }) {
+                    Button(onClick = { viewModel.retry() }) {
                         Text(stringResource(R.string.retry))
                     }
                 }
                 is TriviaUiState.Success -> {
                     Text(
-                        text = stringResource(R.string.correct_answers, state.correctCount),
+                        text = stringResource(R.string.correct_answers, state.correctCount, state.goalCount),
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onPrimary,
                         fontWeight = FontWeight.Bold

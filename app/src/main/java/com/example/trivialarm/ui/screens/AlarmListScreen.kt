@@ -12,14 +12,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.example.trivialarm.data.local.entity.AlarmEntity
-import com.example.trivialarm.ui.viewmodel.AlarmViewModel
-
-import androidx.compose.ui.res.stringResource
 import com.example.trivialarm.R
+import com.example.trivialarm.data.local.entity.AlarmEntity
+import com.example.trivialarm.data.local.entity.CategoryEntity
+import com.example.trivialarm.ui.viewmodel.AlarmViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,6 +28,7 @@ fun AlarmListScreen(
     onEditAlarm: (Int) -> Unit
 ) {
     val alarms by viewModel.alarms.collectAsState()
+    val categories by viewModel.categories.collectAsState()
 
     Scaffold(
         topBar = {
@@ -62,6 +62,7 @@ fun AlarmListScreen(
                 items(alarms, key = { it.id }) { alarm ->
                     AlarmItem(
                         alarm = alarm,
+                        categories = categories,
                         onToggle = { viewModel.toggleAlarm(alarm) },
                         onDelete = { viewModel.deleteAlarm(alarm) },
                         onClick = { onEditAlarm(alarm.id) }
@@ -76,6 +77,7 @@ fun AlarmListScreen(
 @Composable
 fun AlarmItem(
     alarm: AlarmEntity,
+    categories: List<CategoryEntity>,
     onToggle: () -> Unit,
     onDelete: () -> Unit,
     onClick: () -> Unit
@@ -102,6 +104,16 @@ fun AlarmItem(
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold
                 )
+                
+                val categoryName = categories.find { it.id == alarm.categoryId }?.name ?: "Random"
+                val difficultyName = alarm.difficultyPreset.name.lowercase().replaceFirstChar { it.uppercase() }
+                
+                Text(
+                    text = "$categoryName • $difficultyName",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
                 if (alarm.daysOfWeek.isNotEmpty()) {
                     Text(
                         text = alarm.daysOfWeek.joinToString(", ") { dayToString(it) },

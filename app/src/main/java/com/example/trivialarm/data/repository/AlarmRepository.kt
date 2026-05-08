@@ -23,6 +23,8 @@ class AlarmRepository @Inject constructor(
 
     fun getAllAlarms(): Flow<List<AlarmEntity>> = alarmDao.getAllAlarms()
 
+    suspend fun getAlarmById(id: Int): AlarmEntity? = alarmDao.getAlarmById(id)
+
     suspend fun insertAlarm(alarm: AlarmEntity) {
         val id = alarmDao.insertAlarm(alarm).toInt()
         if (alarm.isEnabled) {
