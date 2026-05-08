@@ -1,5 +1,6 @@
 package com.example.trivialarm.data.repository
 
+import android.util.Log
 import com.example.trivialarm.data.local.dao.CategoryDao
 import com.example.trivialarm.data.local.entity.CategoryEntity
 import com.example.trivialarm.data.remote.api.TriviaApi
@@ -9,10 +10,13 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
 import io.mockk.slot
+import io.mockk.unmockkStatic
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.fail
 import org.junit.Before
@@ -26,8 +30,15 @@ class CategoryRepositoryTest {
 
     @Before
     fun setup() {
+        mockkStatic(Log::class)
+        every { Log.e(any(), any(), any()) } returns 0
         every { categoryDao.getAllCategories() } returns emptyFlow()
         repository = CategoryRepository(triviaApi, categoryDao)
+    }
+
+    @After
+    fun tearDown() {
+        unmockkStatic(Log::class)
     }
 
     @Test

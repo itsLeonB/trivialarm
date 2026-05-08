@@ -1,5 +1,6 @@
 package com.example.trivialarm.ui.viewmodel
 
+import android.util.Log
 import com.example.trivialarm.data.local.entity.AlarmDifficultyPreset
 import com.example.trivialarm.data.local.entity.AlarmEntity
 import com.example.trivialarm.data.repository.AlarmRepository
@@ -8,10 +9,13 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -24,10 +28,12 @@ class AlarmViewModelTest {
 
     private val alarmRepository: AlarmRepository = mockk()
     private val categoryRepository: CategoryRepository = mockk()
-    private val testDispatcher = UnconfinedTestDispatcher()
+    private val testDispatcher = StandardTestDispatcher()
 
     @Before
     fun setup() {
+        mockkStatic(Log::class)
+        every { Log.e(any(), any(), any()) } returns 0
         Dispatchers.setMain(testDispatcher)
         every { alarmRepository.getAllAlarms() } returns emptyFlow()
         every { categoryRepository.categories } returns emptyFlow()
@@ -35,6 +41,7 @@ class AlarmViewModelTest {
 
     @After
     fun tearDown() {
+        unmockkStatic(Log::class)
         Dispatchers.resetMain()
     }
 
@@ -45,6 +52,7 @@ class AlarmViewModelTest {
 
         // Act
         AlarmViewModel(alarmRepository, categoryRepository)
+        advanceUntilIdle()
 
         // Assert
         coVerify { categoryRepository.syncCategories() }
@@ -57,6 +65,7 @@ class AlarmViewModelTest {
 
         // Act
         AlarmViewModel(alarmRepository, categoryRepository)
+        advanceUntilIdle()
 
         // Assert
         coVerify { categoryRepository.syncCategories() }
@@ -73,6 +82,7 @@ class AlarmViewModelTest {
 
         // Act
         viewModel.toggleAlarm(alarm)
+        advanceUntilIdle()
 
         // Assert
         coVerify { alarmRepository.updateAlarm(match { !it.isEnabled && it.id == 1 }) }
@@ -88,6 +98,7 @@ class AlarmViewModelTest {
 
         // Act
         viewModel.deleteAlarm(alarm)
+        advanceUntilIdle()
 
         // Assert
         coVerify { alarmRepository.deleteAlarm(alarm) }
@@ -108,6 +119,7 @@ class AlarmViewModelTest {
             categoryId = null,
             difficultyPreset = AlarmDifficultyPreset.EASY
         )
+        advanceUntilIdle()
 
         // Assert
         coVerify { alarmRepository.insertAlarm(match { it.hour == 7 && it.minute == 30 && it.difficultyPreset == AlarmDifficultyPreset.EASY }) }
@@ -129,6 +141,7 @@ class AlarmViewModelTest {
             difficultyPreset = AlarmDifficultyPreset.HARD,
             alarmId = 5
         )
+        advanceUntilIdle()
 
         // Assert
         coVerify { alarmRepository.updateAlarm(match { it.id == 5 && it.hour == 9 && it.difficultyPreset == AlarmDifficultyPreset.HARD }) }

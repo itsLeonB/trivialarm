@@ -11,6 +11,8 @@ import com.example.trivialarm.data.remote.model.TriviaQuestion
 import com.example.trivialarm.data.repository.AlarmRepository
 import com.example.trivialarm.data.repository.TriviaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -38,6 +40,7 @@ class TriviaViewModel @Inject constructor(
         private set
 
     private var currentAlarmId: Int? = null
+    private var fetchJob: Job? = null
 
     // We'll initialize this from the screen if Nav3 doesn't auto-fill SavedStateHandle
     fun initialize(alarmId: Int) {
@@ -51,7 +54,8 @@ class TriviaViewModel @Inject constructor(
     }
 
     private fun fetchQuestions(alarmId: Int) {
-        viewModelScope.launch {
+        fetchJob?.cancel()
+        fetchJob = viewModelScope.launch {
             uiState = TriviaUiState.Loading
             try {
                 val alarm = alarmRepository.getAlarmById(alarmId)
@@ -64,6 +68,8 @@ class TriviaViewModel @Inject constructor(
                     categoryId = categoryId,
                     difficulty = difficulty
                 )
+
+                if (!isActive) return@launch
 
                 if (questions.isNotEmpty()) {
                     val firstQuestion = questions[0]
@@ -78,7 +84,9 @@ class TriviaViewModel @Inject constructor(
                     uiState = TriviaUiState.Error("No questions found")
                 }
             } catch (e: Exception) {
-                uiState = TriviaUiState.Error(e.message ?: "Unknown error")
+                if (isActive) {
+                    uiState = TriviaUiState.Error(e.message ?: "Unknown error")
+                }
             }
         }
     }
