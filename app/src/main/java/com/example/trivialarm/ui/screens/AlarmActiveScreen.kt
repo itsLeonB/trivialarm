@@ -2,6 +2,7 @@ package com.example.trivialarm.ui.screens
 
 import android.text.Html
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -10,14 +11,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.trivialarm.R
+import com.example.trivialarm.ui.components.AnimatedAnswerCard
+import com.example.trivialarm.ui.components.AnimatedQuestionContainer
+import com.example.trivialarm.ui.components.PressableButton
+import com.example.trivialarm.ui.components.PulsingAlarmBackground
+import com.example.trivialarm.ui.viewmodel.AnswerFeedbackState
 import com.example.trivialarm.ui.viewmodel.TriviaUiState
 import com.example.trivialarm.ui.viewmodel.TriviaViewModel
-
-import androidx.compose.ui.res.stringResource
-import com.example.trivialarm.R
 
 @Composable
 fun AlarmActiveScreen(
@@ -40,99 +46,139 @@ fun AlarmActiveScreen(
         }
     }
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.primary
-    ) {
+    PulsingAlarmBackground {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(24.dp)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Top
         ) {
+            Spacer(modifier = Modifier.height(48.dp))
+            
             Text(
                 text = stringResource(R.string.alarm_active),
-                style = MaterialTheme.typography.displaySmall,
-                color = MaterialTheme.colorScheme.onPrimary,
-                fontWeight = FontWeight.Black
+                style = MaterialTheme.typography.displayMedium,
+                color = Color.White,
+                fontWeight = FontWeight.Black,
+                textAlign = TextAlign.Center
             )
             
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(32.dp))
             
             when (state) {
                 is TriviaUiState.Loading -> {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary)
-                    Text(stringResource(R.string.fetching_trivia), color = MaterialTheme.colorScheme.onPrimary)
-                }
-                is TriviaUiState.Error -> {
-                    Text(
-                        text = "Error: ${state.message}",
-                        color = MaterialTheme.colorScheme.errorContainer,
-                        textAlign = TextAlign.Center
-                    )
-                    Button(onClick = { viewModel.retry() }) {
-                        Text(stringResource(R.string.retry))
+                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            CircularProgressIndicator(color = Color.White)
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                stringResource(R.string.fetching_trivia),
+                                color = Color.White,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
                     }
                 }
-                is TriviaUiState.Success -> {
-                    Text(
-                        text = stringResource(R.string.correct_answers, state.correctCount, state.goalCount),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        fontWeight = FontWeight.Bold
-                    )
-                    
-                    Spacer(modifier = Modifier.height(32.dp))
-                    
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        )
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(20.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            val decodedQuestion = Html.fromHtml(
-                                state.questions[state.currentQuestionIndex].question,
-                                Html.FROM_HTML_MODE_LEGACY
-                            ).toString()
-                            
+                is TriviaUiState.Error -> {
+                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = decodedQuestion,
-                                style = MaterialTheme.typography.headlineSmall,
+                                text = "Error: ${state.message}",
+                                color = MaterialTheme.colorScheme.errorContainer,
                                 textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(bottom = 24.dp)
+                                style = MaterialTheme.typography.bodyLarge
                             )
-                            
-                            state.shuffledOptions.forEach { option ->
-                                val decodedOption = Html.fromHtml(option, Html.FROM_HTML_MODE_LEGACY).toString()
-                                Button(
-                                    onClick = { viewModel.submitAnswer(option) },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 4.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = MaterialTheme.colorScheme.secondary
-                                    )
-                                ) {
-                                    Text(
-                                        text = decodedOption,
-                                        textAlign = TextAlign.Center
-                                    )
-                                }
+                            Spacer(modifier = Modifier.height(16.dp))
+                            PressableButton(onClick = { viewModel.retry() }) {
+                                Text(stringResource(R.string.retry))
                             }
                         }
                     }
                 }
+                is TriviaUiState.Success -> {
+                    TriviaContent(state, viewModel)
+                }
                 is TriviaUiState.Finished -> {
-                    Text(
-                        text = stringResource(R.string.well_done),
-                        style = MaterialTheme.typography.displayMedium,
-                        color = MaterialTheme.colorScheme.onPrimary
+                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        Text(
+                            text = stringResource(R.string.well_done),
+                            style = MaterialTheme.typography.displayMedium,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ColumnScope.TriviaContent(
+    state: TriviaUiState.Success,
+    viewModel: TriviaViewModel
+) {
+    val progress = (state.correctCount.toFloat() / state.goalCount.toFloat()).coerceIn(0f, 1f)
+    
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = "Progress: ${state.correctCount} / ${state.goalCount}",
+            style = MaterialTheme.typography.titleMedium,
+            color = Color.White.copy(alpha = 0.9f),
+            fontWeight = FontWeight.Bold
+        )
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        LinearProgressIndicator(
+            progress = { progress },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(12.dp),
+            color = Color.White,
+            trackColor = Color.White.copy(alpha = 0.3f),
+            strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
+        )
+    }
+
+    Spacer(modifier = Modifier.height(48.dp))
+
+    AnimatedQuestionContainer(targetState = state.currentQuestionIndex) { index ->
+        val question = state.questions[index]
+        val decodedQuestion = Html.fromHtml(question.question, Html.FROM_HTML_MODE_LEGACY).toString()
+        
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+            shape = MaterialTheme.shapes.extraLarge,
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = decodedQuestion,
+                    style = MaterialTheme.typography.headlineSmall,
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 32.dp)
+                )
+
+                state.shuffledOptions.forEach { option ->
+                    val decodedOption = Html.fromHtml(option, Html.FROM_HTML_MODE_LEGACY).toString()
+                    val isSelected = state.selectedAnswer == option
+                    val isInteractionDisabled = state.feedbackState != AnswerFeedbackState.IDLE
+
+                    AnimatedAnswerCard(
+                        text = decodedOption,
+                        state = state.feedbackState,
+                        isSelected = isSelected,
+                        enabled = !isInteractionDisabled,
+                        onClick = { viewModel.submitAnswer(option) },
+                        modifier = Modifier.padding(vertical = 6.dp)
                     )
                 }
             }
