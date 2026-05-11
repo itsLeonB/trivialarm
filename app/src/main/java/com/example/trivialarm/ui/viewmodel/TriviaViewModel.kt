@@ -12,9 +12,16 @@ import com.example.trivialarm.data.repository.AlarmRepository
 import com.example.trivialarm.data.repository.TriviaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+enum class AnswerFeedbackState {
+    IDLE,
+    CORRECT,
+    WRONG
+}
 
 sealed interface TriviaUiState {
     data object Loading : TriviaUiState
@@ -23,7 +30,9 @@ sealed interface TriviaUiState {
         val currentQuestionIndex: Int,
         val correctCount: Int,
         val goalCount: Int,
-        val shuffledOptions: List<String>
+        val shuffledOptions: List<String>,
+        val selectedAnswer: String? = null,
+        val feedbackState: AnswerFeedbackState = AnswerFeedbackState.IDLE
     ) : TriviaUiState
     data class Error(val message: String) : TriviaUiState
     data object Finished : TriviaUiState
@@ -93,31 +102,41 @@ class TriviaViewModel @Inject constructor(
 
     fun submitAnswer(answer: String) {
         val currentState = uiState as? TriviaUiState.Success ?: return
-        val currentQuestion = currentState.questions[currentState.currentQuestionIndex]
+        if (currentState.feedbackState != AnswerFeedbackState.IDLE) return
 
-        if (answer == currentQuestion.correctAnswer) {
-            val nextCorrectCount = currentState.correctCount + 1
-            if (nextCorrectCount >= currentState.goalCount) {
-                uiState = TriviaUiState.Finished
+        val currentQuestion = currentState.questions[currentState.currentQuestionIndex]
+        val isCorrect = answer == currentQuestion.correctAnswer
+
+        viewModelScope.launch {
+            uiState = currentState.copy(
+                selectedAnswer = answer,
+                feedbackState = if (isCorrect) AnswerFeedbackState.CORRECT else AnswerFeedbackState.WRONG
+            )
+
+            delay(1200) // Show feedback for a bit
+
+            if (isCorrect) {
+                val nextCorrectCount = currentState.correctCount + 1
+                if (nextCorrectCount >= currentState.goalCount) {
+                    uiState = TriviaUiState.Finished
+                } else {
+                    val nextIndex = (currentState.currentQuestionIndex + 1) % currentState.questions.size
+                    val nextQuestion = currentState.questions[nextIndex]
+                    uiState = currentState.copy(
+                        currentQuestionIndex = nextIndex,
+                        correctCount = nextCorrectCount,
+                        shuffledOptions = (nextQuestion.incorrectAnswers + nextQuestion.correctAnswer).shuffled(),
+                        selectedAnswer = null,
+                        feedbackState = AnswerFeedbackState.IDLE
+                    )
+                }
             } else {
-                val nextIndex = (currentState.currentQuestionIndex + 1) % currentState.questions.size
-                val nextQuestion = currentState.questions[nextIndex]
+                // Wrong answer - stay on same question and allow retry
                 uiState = currentState.copy(
-                    currentQuestionIndex = nextIndex,
-                    correctCount = nextCorrectCount,
-                    shuffledOptions = (nextQuestion.incorrectAnswers + nextQuestion.correctAnswer).shuffled()
+                    selectedAnswer = null,
+                    feedbackState = AnswerFeedbackState.IDLE
                 )
             }
-        } else {
-            // Wrong answer - move to next question anyway or stay? 
-            // The requirement says "provide feedback and stay on the same question or show a new one"
-            // I'll show a new one to avoid frustration
-            val nextIndex = (currentState.currentQuestionIndex + 1) % currentState.questions.size
-            val nextQuestion = currentState.questions[nextIndex]
-            uiState = currentState.copy(
-                currentQuestionIndex = nextIndex,
-                shuffledOptions = (nextQuestion.incorrectAnswers + nextQuestion.correctAnswer).shuffled()
-            )
         }
     }
 }
